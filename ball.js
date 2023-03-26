@@ -1,6 +1,12 @@
-import { randomBetween } from "./helpers.js";
+import { angleReflect, randomBetween } from "./helpers.js";
 
-export const makeBall = (CTX, canvasWidth, scaleFactor, landingData) => {
+export const makeBall = (
+  CTX,
+  canvasWidth,
+  scaleFactor,
+  landingData,
+  getSegmentAngleAtX
+) => {
   const size = 20;
   const gravity = 0.05;
   const position = {
@@ -8,13 +14,10 @@ export const makeBall = (CTX, canvasWidth, scaleFactor, landingData) => {
     y: size,
   };
   const velocity = { x: 0, y: 0 };
+  let headingDeg = 90;
 
   const isShapeInPath = (path, topLeftX, topLeftY, width, height) => {
     const corners = [
-      // Top left
-      { x: topLeftX, y: topLeftY },
-      // Top right
-      { x: topLeftX + width, y: topLeftY },
       // Bottom right
       { x: topLeftX + width, y: topLeftY + height },
       // Bottom left
@@ -23,12 +26,10 @@ export const makeBall = (CTX, canvasWidth, scaleFactor, landingData) => {
 
     // Debugging
     CTX.fillStyle = "red";
-    CTX.fillRect(topLeftX, topLeftY, 2, 2);
-    CTX.fillRect(topLeftX + width, topLeftY, 2, 2);
     CTX.fillRect(topLeftX + width, topLeftY + height, 2, 2);
     CTX.fillRect(topLeftX, topLeftY + height, 2, 2);
 
-    return corners.some(({ x, y }) =>
+    return corners.find(({ x, y }) =>
       CTX.isPointInPath(path, x * scaleFactor, y * scaleFactor)
     );
   };
@@ -39,24 +40,33 @@ export const makeBall = (CTX, canvasWidth, scaleFactor, landingData) => {
   });
 
   const update = () => {
+    velocity.x = Math.cos((headingDeg * Math.PI) / 180);
     velocity.y += gravity;
     let newPosition = getNextPosition();
+    const collisionPoint = isShapeInPath(
+      landingData.terrainPath2D,
+      newPosition.x,
+      newPosition.y,
+      size,
+      size
+    );
 
-    if (
-      isShapeInPath(
-        landingData.terrainPath2D,
-        newPosition.x,
-        newPosition.y,
-        size,
-        size
-      )
-    ) {
-      velocity.y = -velocity.y / 1.2;
+    if (collisionPoint) {
+      headingDeg = angleReflect(
+        headingDeg,
+        getSegmentAngleAtX(collisionPoint.x)
+      );
+
+      velocity.y *= -0.8;
+
       newPosition = getNextPosition();
     }
 
     position.x = newPosition.x;
     position.y = newPosition.y;
+
+    if (position.x > canvasWidth) position.x = 0;
+    if (position.x < 0) position.x = canvasWidth;
   };
 
   const draw = () => {

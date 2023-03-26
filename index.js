@@ -11,7 +11,13 @@ const [CTX, canvasWidth, canvasHeight, scaleFactor] = generateCanvas({
 const terrain = makeTerrain(CTX, canvasWidth, canvasHeight);
 const landingData = terrain.getLandingData();
 
-const ball = makeBall(CTX, canvasWidth, scaleFactor, landingData);
+const ball = makeBall(
+  CTX,
+  canvasWidth,
+  scaleFactor,
+  landingData,
+  terrain.getSegmentAngleAtX
+);
 
 animate(() => {
   CTX.clearRect(0, 0, canvasWidth, canvasHeight);
