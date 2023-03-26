@@ -1,5 +1,6 @@
 import { animate, generateCanvas } from "./helpers.js";
 import { makeTerrain } from "./terrain.js";
+import { makeBall } from "./ball.js";
 
 const [CTX, canvasWidth, canvasHeight] = generateCanvas({
   width: window.innerWidth,
@@ -10,9 +11,12 @@ const [CTX, canvasWidth, canvasHeight] = generateCanvas({
 const terrain = makeTerrain(CTX, canvasWidth, canvasHeight);
 const landingData = terrain.getLandingData();
 
+const ball = makeBall(CTX, canvasWidth, canvasHeight, landingData);
+
 animate(() => {
   CTX.clearRect(0, 0, canvasWidth, canvasHeight);
   terrain.draw();
+  ball.draw();
 
   for (let index = 0; index < landingData.numPoints; index++) {
     const segmentWidth = canvasWidth / landingData.numPoints;
