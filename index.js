@@ -108,10 +108,10 @@ export const makeTerrain = () => {
             index <= surface.startPoint + surface.widthInPoints
         );
 
-        const x = index * (canvasWidth / numPoints);
-        const newY = landingSurface ? landingSurface.height : y;
-
-        return { x, y: newY };
+        return {
+          x: index * (canvasWidth / numPoints),
+          y: landingSurface ? landingSurface.height : y,
+        };
       }
     );
 
@@ -123,7 +123,6 @@ export const makeTerrain = () => {
 
     terrainPath2D = terrainPath;
   };
-
   reGenerate();
 
   const draw = () => {
@@ -172,9 +171,7 @@ export const makeTerrain = () => {
   };
 
   const getSegmentAngleAtX = (x) => {
-    const segmentNumber = Math.floor(
-      x / (canvasWidth / terrainPathArray.length)
-    );
+    const segmentNumber = Math.floor(x / (canvasWidth / numPoints));
     const segmentStart = terrainPathArray[segmentNumber];
     const segmentEnd = terrainPathArray[segmentNumber + 1];
     return getLineAngle(segmentStart, segmentEnd);
@@ -193,11 +190,12 @@ animate(() => {
   for (let index = 0; index < landingData.numPoints; index++) {
     const segmentWidth = Math.floor(canvasWidth / landingData.numPoints);
     const x = index * segmentWidth + segmentWidth / 2;
-    const text = terrain.getSegmentAngleAtX(x).toFixed(1);
+    const text = `(${index}) ${terrain.getSegmentAngleAtX(x).toFixed(1)}°`;
+    const textWidth = CTX.measureText(text).width;
 
     CTX.fillStyle = "white";
-    CTX.fillText(text, x, 12);
+    CTX.fillText(text, x - textWidth / 2, landingData.terrainHeight - 100);
     CTX.fillStyle = "rgba(255, 255, 255, 0.5)";
-    CTX.fillRect(x + CTX.measureText(text).width / 2, 16, 1, canvasHeight);
+    CTX.fillRect(x, landingData.terrainHeight - 90, 1, canvasHeight);
   }
 });
