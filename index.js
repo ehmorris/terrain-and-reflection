@@ -18,7 +18,7 @@ export const makeTerrain = () => {
   const minHeight = canvasHeight * 0.8;
   const landingMaxHeight = canvasHeight * 0.8;
   const landingMinHeight = canvasHeight * 0.95;
-  const numPoints = Math.max(canvasWidth / 60, 20);
+  const numPoints = Math.round(canvasWidth / 60);
   let landingZoneSpans = [];
   let landingSurfaces = [];
   let terrainPathArray = [];
@@ -76,39 +76,31 @@ export const makeTerrain = () => {
     };
   };
 
+  const generateMidpointDisplacementTerrain = () => {
+    let terrainPoints = [];
+
+    for (let index = 0; index <= numPoints; index++) {
+      terrainPoints.push({
+        x: index * (canvasWidth / numPoints),
+        y: randomBetween(minHeight, maxHeight),
+      });
+    }
+
+    return terrainPoints;
+  };
+
   const reGenerate = () => {
     generateLandingZoneSpans();
     landingSurfaces = [generateLandingSurface(4), generateLandingSurface(1)];
+    terrainPathArray = generateMidpointDisplacementTerrain();
 
-    const path = new Path2D();
-    path.moveTo(0, canvasHeight);
-    path.lineTo(0, maxHeight);
-    terrainPathArray.push({ x: 0, y: maxHeight });
+    const terrainPath = new Path2D();
+    terrainPath.moveTo(0, canvasHeight);
+    terrainPathArray.forEach(({ x, y }) => terrainPath.lineTo(x, y));
+    terrainPath.lineTo(canvasWidth, canvasHeight);
+    terrainPath.closePath();
 
-    // Draw terrain from left to right
-    for (let index = 1; index < numPoints; index++) {
-      // Get landing surface if we've reached its x position
-      const landingSurface = landingSurfaces.find(
-        (surface) =>
-          index >= surface.startPoint &&
-          index <= surface.startPoint + surface.widthInPoints
-      );
-
-      const x = index * (canvasWidth / numPoints);
-      const y = landingSurface
-        ? landingSurface.height
-        : randomBetween(minHeight, maxHeight);
-
-      path.lineTo(x, y);
-      terrainPathArray.push({ x, y });
-    }
-
-    path.lineTo(canvasWidth, maxHeight);
-    path.lineTo(canvasWidth, canvasHeight);
-    path.closePath();
-    terrainPathArray.push({ x: canvasWidth, y: maxHeight });
-
-    terrainPath2D = path;
+    terrainPath2D = terrainPath;
   };
 
   reGenerate();
@@ -172,26 +164,18 @@ export const makeTerrain = () => {
 const terrain = makeTerrain();
 const landingData = terrain.getLandingData();
 
-animate((timeSinceStart) => {
+animate(() => {
   CTX.clearRect(0, 0, canvasWidth, canvasHeight);
   terrain.draw();
 
   for (let index = 0; index < landingData.numPoints; index++) {
     const segmentWidth = canvasWidth / landingData.numPoints;
     const x = index * segmentWidth + segmentWidth / 2;
+    const text = terrain.getSegmentAngleAtX(x).toFixed(1);
 
     CTX.fillStyle = "white";
-    CTX.fillText(
-      terrain.getSegmentAngleAtX(x).toFixed(1),
-      x,
-      landingData.terrainHeight
-    );
+    CTX.fillText(text, x, 12);
     CTX.fillStyle = "rgba(255, 255, 255, 0.5)";
-    CTX.fillRect(
-      x + CTX.measureText(index).width / 2,
-      landingData.terrainHeight + 6,
-      1,
-      canvasHeight - landingData.terrainHeight
-    );
+    CTX.fillRect(x + CTX.measureText(text).width / 2, 16, 1, canvasHeight);
   }
 });
