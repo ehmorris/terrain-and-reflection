@@ -15,9 +15,9 @@ const [CTX, canvasWidth, canvasHeight, canvasElement, scaleFactor] =
 
 export const makeTerrain = () => {
   const targetHeight = canvasHeight * 0.85;
-  const landingMaxHeight = canvasHeight * 0.82;
+  const landingMaxHeight = canvasHeight * 0.85;
   const landingMinHeight = canvasHeight * 0.88;
-  const numPoints = 6; //Math.round(canvasWidth / 40);
+  const numPoints = Math.round(canvasWidth / 60);
   let landingZoneSpans = [];
   let landingSurfaces = [];
   let terrainPathArray = [];
