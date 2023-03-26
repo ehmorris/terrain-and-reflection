@@ -14,11 +14,10 @@ const [CTX, canvasWidth, canvasHeight, canvasElement, scaleFactor] =
   });
 
 export const makeTerrain = () => {
-  const maxHeight = canvasHeight * 0.7;
-  const minHeight = canvasHeight * 0.8;
-  const landingMaxHeight = canvasHeight * 0.8;
-  const landingMinHeight = canvasHeight * 0.95;
-  const numPoints = Math.round(canvasWidth / 60);
+  const targetHeight = canvasHeight * 0.85;
+  const landingMaxHeight = canvasHeight * 0.82;
+  const landingMinHeight = canvasHeight * 0.88;
+  const numPoints = 6; //Math.round(canvasWidth / 40);
   let landingZoneSpans = [];
   let landingSurfaces = [];
   let terrainPathArray = [];
@@ -76,23 +75,45 @@ export const makeTerrain = () => {
     };
   };
 
-  const generateMidpointDisplacementTerrain = () => {
-    let terrainPoints = [];
+  const generateTerrainY = (width, height, displace, roughness) => {
+    let points = [];
+    let power = Math.pow(2, Math.ceil(Math.log(width) / Math.log(2)));
 
-    for (let index = 0; index <= numPoints; index++) {
-      terrainPoints.push({
-        x: index * (canvasWidth / numPoints),
-        y: randomBetween(minHeight, maxHeight),
-      });
+    points[0] = height + Math.random() * displace * 2 - displace;
+    points[power] = height + Math.random() * displace * 2 - displace;
+
+    displace *= roughness;
+
+    for (let i = 1; i < power; i *= 2) {
+      for (let j = power / i / 2; j < power; j += power / i) {
+        points[j] = (points[j - power / i / 2] + points[j + power / i / 2]) / 2;
+        points[j] += Math.random() * displace * 2 - displace;
+      }
+
+      displace *= roughness;
     }
 
-    return terrainPoints;
+    return points;
   };
 
   const reGenerate = () => {
     generateLandingZoneSpans();
     landingSurfaces = [generateLandingSurface(4), generateLandingSurface(1)];
-    terrainPathArray = generateMidpointDisplacementTerrain();
+    terrainPathArray = generateTerrainY(numPoints, targetHeight, 100, 0.5).map(
+      (y, index) => {
+        // Get landing surface if we've reached its x position
+        const landingSurface = landingSurfaces.find(
+          (surface) =>
+            index >= surface.startPoint &&
+            index <= surface.startPoint + surface.widthInPoints
+        );
+
+        const x = index * (canvasWidth / numPoints);
+        const newY = landingSurface ? landingSurface.height : y;
+
+        return { x, y: newY };
+      }
+    );
 
     const terrainPath = new Path2D();
     terrainPath.moveTo(0, canvasHeight);
@@ -144,15 +165,16 @@ export const makeTerrain = () => {
 
     return {
       terrainPath2D,
-      terrainHeight: maxHeight,
-      terrainMinHeight: minHeight,
       numPoints,
+      terrainHeight: targetHeight,
       landingSurfaces: landingSurfacesInPixels,
     };
   };
 
   const getSegmentAngleAtX = (x) => {
-    const segmentNumber = Math.floor(x / (canvasWidth / numPoints));
+    const segmentNumber = Math.floor(
+      x / (canvasWidth / terrainPathArray.length)
+    );
     const segmentStart = terrainPathArray[segmentNumber];
     const segmentEnd = terrainPathArray[segmentNumber + 1];
     return getLineAngle(segmentStart, segmentEnd);
@@ -169,7 +191,7 @@ animate(() => {
   terrain.draw();
 
   for (let index = 0; index < landingData.numPoints; index++) {
-    const segmentWidth = canvasWidth / landingData.numPoints;
+    const segmentWidth = Math.floor(canvasWidth / landingData.numPoints);
     const x = index * segmentWidth + segmentWidth / 2;
     const text = terrain.getSegmentAngleAtX(x).toFixed(1);
 
