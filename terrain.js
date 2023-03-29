@@ -1,9 +1,9 @@
 import { randomBetween, getLineAngle, shuffleArray } from "./helpers.js";
 
 export const makeTerrain = (CTX, canvasWidth, canvasHeight) => {
-  const targetHeight = canvasHeight * 0.8;
-  const landingMaxHeight = canvasHeight * 0.8;
-  const landingMinHeight = canvasHeight * 0.84;
+  const targetHeight = canvasHeight * 0.85;
+  const landingMaxHeight = targetHeight;
+  const landingMinHeight = canvasHeight - 20;
   const numPoints = Math.max(Math.round(canvasWidth / 60), 20);
   let landingZoneSpans = [];
   let landingSurfaces = [];
@@ -80,6 +80,8 @@ export const makeTerrain = (CTX, canvasWidth, canvasHeight) => {
         };
       }
     );
+    terrainPathArray[0] = { x: 0, y: targetHeight };
+    terrainPathArray[numPoints] = { x: canvasWidth, y: targetHeight };
 
     const terrainPath = new Path2D();
     terrainPath.moveTo(0, canvasHeight);
