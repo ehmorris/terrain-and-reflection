@@ -9,12 +9,13 @@ export const makeBall = (
 ) => {
   const size = 20;
   const gravity = 0.05;
-  const friction = randomBetween(0.5, 0.75);
-  const velocityThreshold = 0.9;
+  const friction = randomBetween(0.3, 0.6);
+  const velocityThreshold = 1;
   const position = {
     x: randomBetween(size / 2, canvasWidth - size / 2),
     y: size,
   };
+  const initialXVelocity = randomBetween(-5, 5);
   const velocity = { x: 0, y: 0 };
   let headingDeg = 90;
   let rotation = 0;
@@ -68,7 +69,7 @@ export const makeBall = (
   };
 
   const update = () => {
-    velocity.x = Math.cos((headingDeg * Math.PI) / 180);
+    velocity.x = initialXVelocity + Math.cos((headingDeg * Math.PI) / 180);
     velocity.y += gravity;
 
     const prospectiveNextPosition = {
@@ -85,13 +86,11 @@ export const makeBall = (
     );
 
     if (collisionPoint) {
-      headingDeg = angleReflect(
-        headingDeg,
-        getSegmentAngleAtX(collisionPoint.x)
-      );
+      const collisionAngle = getSegmentAngleAtX(collisionPoint.x);
+      headingDeg = angleReflect(headingDeg, collisionAngle);
       velocity.x = velocity.x < velocityThreshold ? 0 : velocity.x * -friction;
       velocity.y = velocity.y < velocityThreshold ? 0 : velocity.y * -friction;
-      rotation = getSegmentAngleAtX(collisionPoint.x);
+      rotation = collisionAngle;
 
       if (velocity.x === 0 && velocity.y === 0) stopped = true;
 
