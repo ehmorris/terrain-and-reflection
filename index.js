@@ -11,18 +11,23 @@ const [CTX, canvasWidth, canvasHeight, scaleFactor] = generateCanvas({
 const terrain = makeTerrain(CTX, canvasWidth, canvasHeight);
 const landingData = terrain.getLandingData();
 
-const ball = makeBall(
-  CTX,
-  canvasWidth,
-  scaleFactor,
-  landingData,
-  terrain.getSegmentAngleAtX
-);
+const balls = new Array(10)
+  .fill()
+  .map(() =>
+    makeBall(
+      CTX,
+      canvasWidth,
+      scaleFactor,
+      landingData,
+      terrain.getSegmentAngleAtX
+    )
+  );
 
 animate(() => {
   CTX.clearRect(0, 0, canvasWidth, canvasHeight);
   terrain.draw();
-  ball.draw();
+
+  balls.forEach((b) => b.draw());
 
   // Draw angles and vertical lines
   for (let index = 0; index < landingData.numPoints; index++) {
