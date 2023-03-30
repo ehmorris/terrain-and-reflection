@@ -51,12 +51,12 @@ animate(() => {
     }
 
     CTX.fillStyle = "white";
-    CTX.fillText(text, x - textWidth / 2, landingData.terrainHeight - 100);
+    CTX.fillText(text, x - textWidth / 2, landingData.terrainMaxHeight - 100);
     CTX.fillStyle = "rgba(255, 255, 255, 0.25)";
-    CTX.fillRect(x, landingData.terrainHeight - 90, 1, canvasHeight);
+    CTX.fillRect(x, landingData.terrainMaxHeight - 90, 1, canvasHeight);
   }
 
   // Draw horizontal rule along target height for terrain
   CTX.fillStyle = "rgba(255, 0, 0, 0.75)";
-  CTX.fillRect(0, landingData.terrainHeight, canvasWidth, 1);
+  CTX.fillRect(0, landingData.terrainMaxHeight, canvasWidth, 1);
 });

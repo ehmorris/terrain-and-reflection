@@ -133,7 +133,10 @@ export const makeTerrain = (CTX, canvasWidth, canvasHeight) => {
     return {
       terrainPath2D,
       numPoints,
-      terrainHeight: targetHeight,
+      terrainMaxHeight: terrainPathArray.reduce(
+        (min, { y }) => (y < min ? y : min),
+        canvasHeight
+      ),
       landingSurfaces: landingSurfacesInPixels,
     };
   };

@@ -2,6 +2,12 @@ import { angleReflect, randomBetween } from "./helpers.js";
 
 const progress = (start, end, current) => (current - start) / (end - start);
 
+const transition = (start, end, progress) => start + (end - start) * progress;
+
+const countSimilarCoordinates = (arr) =>
+  arr.length -
+  new Set(arr.map(({ x, y }) => `${Math.round(x)}|${Math.round(y)}`)).size;
+
 export const makeBall = (
   CTX,
   canvasWidth,
@@ -14,24 +20,22 @@ export const makeBall = (
   const width = randomBetween(minSize, maxSize);
   const height = randomBetween(minSize, maxSize);
   const gravity = 0.05;
-  const friction = progress(
-    maxSize * maxSize,
-    minSize * minSize,
-    width * height
+  const friction = transition(
+    0.01,
+    0.7,
+    progress(maxSize * maxSize, minSize * minSize, width * height)
   );
-
   const velocityThreshold = 1;
-  const frameJitterThreshold = 6;
   const position = {
     x: randomBetween(width / 2, canvasWidth - width / 2),
     y: height,
   };
   const initialXVelocity = randomBetween(-10, 10);
-  const velocity = { x: 0, y: 0 };
+  const velocity = { x: 0, y: randomBetween(-10, 4) };
   let headingDeg = 90;
   let rotation = 0;
   let stopped = false;
-  let framesInARowCollided = 0;
+  let positionLog = [];
 
   let cornersForDebugging;
   const isShapeInPath = (path, topLeftX, topLeftY, width, height) => {
@@ -76,11 +80,11 @@ export const makeBall = (
       velocity.x = velocity.x < velocityThreshold ? 0 : velocity.x * -friction;
       velocity.y = velocity.y < velocityThreshold ? 0 : velocity.y * -friction;
       rotation = collisionAngle;
-      framesInARowCollided++;
 
       if (
-        framesInARowCollided > frameJitterThreshold ||
-        (velocity.x === 0 && velocity.y === 0)
+        position.y >= landingData.terrainMaxHeight &&
+        (countSimilarCoordinates(positionLog) > 4 ||
+          (velocity.x === 0 && velocity.y === 0))
       ) {
         stopped = true;
       } else {
@@ -90,11 +94,14 @@ export const makeBall = (
     } else {
       position.x = prospectiveNextPosition.x;
       position.y = prospectiveNextPosition.y;
-      framesInARowCollided = 0;
     }
 
     if (position.x > canvasWidth) position.x = 0;
     if (position.x < 0) position.x = canvasWidth;
+
+    // Track the last 20 positions to check for duplicates
+    positionLog.push({ x: position.x, y: position.y });
+    if (positionLog.length > 20) positionLog.shift();
   };
 
   const draw = () => {
@@ -105,6 +112,10 @@ export const makeBall = (
     cornersForDebugging.forEach(({ x, y }) =>
       CTX.fillRect(x - 1.5, y - 1.5, 3, 3)
     );
+
+    positionLog.forEach(({ x, y }) => {
+      CTX.fillRect(x - 1.5, y - 1.5, 3, 3);
+    });
 
     CTX.fillStyle = "blue";
     CTX.translate(position.x, position.y);
