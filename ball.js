@@ -7,63 +7,40 @@ export const makeBall = (
   landingData,
   getSegmentAngleAtX
 ) => {
-  const size = 20;
+  const maxSize = 30;
+  const minSize = 10;
+  const width = randomBetween(minSize, maxSize);
+  const height = randomBetween(minSize, maxSize);
   const gravity = 0.05;
   const friction = randomBetween(0.3, 0.6);
   const velocityThreshold = 1;
+  const frameJitterThreshold = 6;
   const position = {
-    x: randomBetween(size / 2, canvasWidth - size / 2),
-    y: size,
+    x: randomBetween(width / 2, canvasWidth - width / 2),
+    y: height,
   };
-  const initialXVelocity = randomBetween(-5, 5);
+  const initialXVelocity = randomBetween(-10, 10);
   const velocity = { x: 0, y: 0 };
   let headingDeg = 90;
   let rotation = 0;
   let stopped = false;
+  let framesInARowCollided = 0;
 
-  const rotatePointAroundOrigin = (point, origin, angle) => {
-    const angleInRadians = (angle * Math.PI) / 180;
-    const rotatedX =
-      Math.cos(angleInRadians) * (point.x - origin.x) -
-      Math.sin(angleInRadians) * (point.y - origin.y) +
-      origin.x;
-    const rotatedY =
-      Math.sin(angleInRadians) * (point.x - origin.x) +
-      Math.cos(angleInRadians) * (point.y - origin.y) +
-      origin.y;
-
-    return { x: rotatedX, y: rotatedY };
-  };
-
+  let cornersForDebugging;
   const isShapeInPath = (path, topLeftX, topLeftY, width, height) => {
-    const corners = [
-      // Bottom right
-      { x: topLeftX + width - size / 2, y: topLeftY + height - size / 2 },
-      // Bottom center
-      { x: topLeftX + width / 2 - size / 2, y: topLeftY + height - size / 2 },
-      // Bottom left
-      { x: topLeftX - size / 2, y: topLeftY + height - size / 2 },
-      // Top left
-      { x: topLeftX - size / 2, y: topLeftY - size / 2 },
-      // Top center
-      { x: topLeftX + width / 2 - size / 2, y: topLeftY - size / 2 },
-      // Top right
-      { x: topLeftX + width - size / 2, y: topLeftY - size / 2 },
-      // Left center
-      { x: topLeftX - size / 2, y: topLeftY + height / 2 - size / 2 },
-      // Right center
-      { x: topLeftX + width - size / 2, y: topLeftY + height / 2 - size / 2 },
-    ];
+    const radius = Math.sqrt(width ** 2 + height ** 2) / 3;
+    const numCollisionPoints = 5;
+    const dots = new Array(numCollisionPoints).fill().map((_, i) => {
+      const angle = (360 / numCollisionPoints) * i;
+      return {
+        x: topLeftX + radius * Math.cos((angle * Math.PI) / 180),
+        y: topLeftY + radius * Math.sin((angle * Math.PI) / 180),
+      };
+    });
 
-    const rotatedCorners = corners.map((corner) =>
-      rotatePointAroundOrigin(corner, position, rotation)
-    );
+    cornersForDebugging = dots;
 
-    // Debugging
-    CTX.fillStyle = "red";
-    rotatedCorners.forEach(({ x, y }) => CTX.fillRect(x - 1.5, y - 1.5, 3, 3));
-
-    return rotatedCorners.find(({ x, y }) =>
+    return dots.find(({ x, y }) =>
       CTX.isPointInPath(path, x * scaleFactor, y * scaleFactor)
     );
   };
@@ -71,6 +48,7 @@ export const makeBall = (
   const update = () => {
     velocity.x = initialXVelocity + Math.cos((headingDeg * Math.PI) / 180);
     velocity.y += gravity;
+    rotation += velocity.x * friction;
 
     const prospectiveNextPosition = {
       x: position.x + velocity.x,
@@ -81,8 +59,8 @@ export const makeBall = (
       landingData.terrainPath2D,
       prospectiveNextPosition.x,
       prospectiveNextPosition.y,
-      size,
-      size
+      width,
+      height
     );
 
     if (collisionPoint) {
@@ -91,17 +69,23 @@ export const makeBall = (
       velocity.x = velocity.x < velocityThreshold ? 0 : velocity.x * -friction;
       velocity.y = velocity.y < velocityThreshold ? 0 : velocity.y * -friction;
       rotation = collisionAngle;
+      framesInARowCollided++;
 
-      if (velocity.x === 0 && velocity.y === 0) stopped = true;
-
-      position.x = position.x + velocity.x;
-      position.y = position.y + velocity.y;
+      if (
+        framesInARowCollided > frameJitterThreshold ||
+        (velocity.x === 0 && velocity.y === 0)
+      ) {
+        stopped = true;
+      } else {
+        position.x = position.x + velocity.x;
+        position.y = position.y + velocity.y;
+      }
     } else {
       position.x = prospectiveNextPosition.x;
       position.y = prospectiveNextPosition.y;
+      framesInARowCollided = 0;
     }
 
-    rotation += velocity.x * friction;
     if (position.x > canvasWidth) position.x = 0;
     if (position.x < 0) position.x = canvasWidth;
   };
@@ -109,10 +93,16 @@ export const makeBall = (
   const draw = () => {
     if (!stopped) update();
     CTX.save();
+
+    CTX.fillStyle = "red";
+    cornersForDebugging.forEach(({ x, y }) =>
+      CTX.fillRect(x - 1.5, y - 1.5, 3, 3)
+    );
+
     CTX.fillStyle = "blue";
     CTX.translate(position.x, position.y);
     CTX.rotate(rotation * (Math.PI / 180));
-    CTX.fillRect(-size / 2, -size / 2, size, size);
+    CTX.fillRect(-width / 2, -height / 2, width, height);
     CTX.restore();
   };
 
