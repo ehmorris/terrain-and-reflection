@@ -1,5 +1,7 @@
 import { angleReflect, randomBetween } from "./helpers.js";
 
+const progress = (start, end, current) => (current - start) / (end - start);
+
 export const makeBall = (
   CTX,
   canvasWidth,
@@ -12,7 +14,12 @@ export const makeBall = (
   const width = randomBetween(minSize, maxSize);
   const height = randomBetween(minSize, maxSize);
   const gravity = 0.05;
-  const friction = randomBetween(0.3, 0.6);
+  const friction = progress(
+    maxSize * maxSize,
+    minSize * minSize,
+    width * height
+  );
+
   const velocityThreshold = 1;
   const frameJitterThreshold = 6;
   const position = {
