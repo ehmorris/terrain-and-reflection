@@ -11,7 +11,7 @@ const [CTX, canvasWidth, canvasHeight, scaleFactor] = generateCanvas({
 const terrain = makeTerrain(CTX, canvasWidth, canvasHeight);
 const landingData = terrain.getLandingData();
 
-const balls = new Array(10)
+const balls = new Array(20)
   .fill()
   .map(() =>
     makeBall(
