@@ -93,7 +93,7 @@ export const makeBall = (
       }
 
       // Track the last 20 positions to check for duplicates
-      positionLog.push({ x: position.x, y: position.y });
+      positionLog.push({ ...position });
       if (positionLog.length > 20) positionLog.shift();
     } else {
       positionLog = [];
